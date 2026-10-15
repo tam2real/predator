@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DexView Market — Standalone</title>
+<link rel="stylesheet" href="dexview-market.css" />
+<style>
+  :root {
+    --dex-bg-base: #020814;
+    --accent: #4db6ff;
+    --accent-dim: rgba(77,182,255,0.12);
+    --accent-mid: rgba(77,182,255,0.4);
+    --accent-glow: rgba(77,182,255,0.28);
+    --panel: rgba(3,10,22,0.92);
+    --good: #5eff9f;
+    --warn: #ffd166;
+    --bad: #ff5f57;
+    --text: #d8f0ff;
+    --muted: rgba(168,216,255,0.5);
+    --border: rgba(77,182,255,0.16);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: var(--dex-bg-base); color: var(--text); font-family: 'Courier New', Courier, monospace; }
+  .shell { position: relative; width: 100vw; height: 100vh; display: flex; flex-direction: column; }
+  .header { padding: 12px 16px; border-bottom: 1px solid var(--border); background: rgba(2,8,20,0.9); display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .header h1 { font-size: 14px; font-weight: 700; letter-spacing: 0.28em; text-transform: uppercase; color: var(--accent); }
+  .header .spacer { flex: 1; }
+  .asset-selector { display: flex; align-items: center; gap: 12px; }
+  .asset-selector select { padding: 8px 12px; border: 1px solid var(--border); background: rgba(2,8,20,0.9); color: var(--text); font-family: inherit; font-size: 12px; border-radius: 4px; min-width: 180px; }
+  .asset-selector select:focus { outline: none; border-color: var(--accent); }
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .chart-wrap { flex: 1; display: flex; flex-direction: column; padding: 16px; min-height: 0; }
+  .chart-container { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .chart-title { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: rgba(2,8,20,0.8); border-bottom: 1px solid var(--border); border-radius: 8px 8px 0 0; }
+  .chart-title .left { display: flex; align-items: center; gap: 12px; }
+  .chart-title .symbol { font-size: 16px; font-weight: 700; letter-spacing: 0.08em; }
+  .chart-title .price { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .chart-title .change { font-size: 12px; font-weight: 600; margin-left: 10px; }
+  .chart-title .change.pos { color: var(--good); }
+  .chart-title .change.neg { color: var(--bad); }
+  .chart-title .change.flat { color: var(--muted); }
+  .chart-title .right { display: flex; align-items: center; gap: 8px; }
+  .tf-selector { display: flex; gap: 4px; }
+  .tf-btn { padding: 4px 10px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-family: inherit; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; border-radius: 3px; transition: all 0.1s; }
+  .tf-btn:hover { border-color: var(--accent-mid); color: var(--text); }
+  .tf-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+  .source-badge { font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 6px; border: 1px solid; border-radius: 3px; }
+  .source-badge.live { color: var(--good); border-color: rgba(94,255,159,0.3); background: rgba(94,255,159,0.08); }
+  .source-badge.cached { color: var(--warn); border-color: rgba(255,209,102,0.3); background: rgba(255,209,102,0.08); }
+  .source-badge.mock { color: var(--muted); border-color: rgba(168,216,255,0.2); background: rgba(168,216,255,0.04); }
+  .source-badge.unavailable { color: var(--bad); border-color: rgba(255,95,87,0.3); background: rgba(255,95,87,0.08); }
+  #chart-area { flex: 1; position: relative; min-height: 220px; }
+  .footer { padding: 8px 16px; border-top: 1px solid var(--border); background: rgba(2,8,20,0.9); font-size: 10px; color: var(--muted); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .chart-loading { display: flex; align-items: center; justify-content: center; height: 100%; color: var(--muted); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; }
+  .chart-error { display: flex; align-items: center; justify-content: center; height: 100%; padding: 16px; color: var(--bad); font-size: 10px; text-align: center; line-height: 1.5; }
+  .trade-plan-panel { padding: 12px 16px; background: rgba(2,8,20,0.8); border-top: 1px solid var(--border); }
+  .trade-plan-row { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 8px; }
+  .trade-plan-level { display: flex; align-items: center; gap: 8px; font-size: 11px; font-family: inherit; }
+  .trade-plan-level .label { font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+  .trade-plan-level .value { font-variant-numeric: tabular-nums; }
+  .trade-plan-level.entry .label { color: var(--good); }
+  .trade-plan-level.stop .label { color: var(--bad); }
+  .trade-plan-level.tp .label { color: var(--warn); }
+  .trade-plan-level .value { color: var(--text); }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="header">
+    <h1>DexView Market</h1>
+    <div class="spacer"></div>
+    <div class="asset-selector">
+      <select id="asset-select" aria-label="Select asset">
+        <option value="BTC">BTC — Bitcoin</option>
+        <option value="ETH">ETH — Ethereum</option>
+        <option value="SOL">SOL — Solana</option>
+        <option value="XRP">XRP — Ripple</option>
+        <option value="LINK">LINK — Chainlink</option>
+        <option value="DOGE">DOGE — Dogecoin</option>
+        <option value="ADA">ADA — Cardano</option>
+        <option value="AVAX">AVAX — Avalanche</option>
+        <option value="SUI">SUI — Sui</option>
+        <option value="NEAR">NEAR — Near</option>
+        <option value="BNB">BNB — BNB</option>
+        <option value="MATIC">MATIC — Polygon</option>
+        <option value="TAO">TAO — Bittensor</option>
+        <option value="HYPE">HYPE — Hyperliquid</option>
+        <option value="BCH">BCH — Bitcoin Cash</option>
+        <option value="ZEC">ZEC — Zcash</option>
+        <option value="AIP">AIP — AIP</option>
+      </select>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="chart-wrap">
+      <div class="chart-container">
+        <div class="chart-title">
+          <div class="left">
+            <span class="dex-asset-color" id="asset-color" style="background:#f7931a;"></span>
+            <span class="symbol" id="asset-symbol">BTC</span>
+            <span class="price" id="asset-price">$—</span>
+            <span class="change flat" id="asset-change">—</span>
+          </div>
+          <div class="right">
+            <div class="tf-selector" id="tf-selector" role="radiogroup" aria-label="Timeframe">
+              <button class="tf-btn" data-tf="1m" role="radio" aria-checked="false">1m</button>
+              <button class="tf-btn" data-tf="5m" role="radio" aria-checked="false">5m</button>
+              <button class="tf-btn" data-tf="15m" role="radio" aria-checked="false">15m</button>
+              <button class="tf-btn active" data-tf="1H" role="radio" aria-checked="true">1H</button>
+              <button class="tf-btn" data-tf="4H" role="radio" aria-checked="false">4H</button>
+              <button class="tf-btn" data-tf="1D" role="radio" aria-checked="false">1D</button>
+            </div>
+            <div class="zoom-selector" id="zoom-selector" role="group" aria-label="Zoom">
+              <button class="zoom-btn" id="zoom-out" title="Zoom out" aria-label="Zoom out">&minus;</button>
+              <span class="zoom-label" id="zoom-label">1.0&times;</span>
+              <button class="zoom-btn" id="zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
+              <button class="zoom-btn wide" id="zoom-reset" title="Reset zoom" aria-label="Reset zoom">FIT</button>
+            </div>
+            <span class="source-badge live" id="source-badge">LIVE</span>
+          </div>
+        </div>
+        <div id="chart-area" class="chart-area">
+          <div class="chart-loading">Loading chart…</div>
+        </div>
+      </div>
+
+      <div class="trade-plan-panel">
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--accent);margin-bottom:8px;">Trade Plan</div>
+        <div class="trade-plan-row" id="trade-plan-row">
+          <div class="trade-plan-level entry"><span class="label">Entry</span><span class="value" id="plan-entry">—</span></div>
+          <div class="trade-plan-level stop"><span class="label">Stop</span><span class="value" id="plan-stop">—</span></div>
+          <div class="trade-plan-level tp"><span class="label">TP1</span><span class="value" id="plan-tp1">—</span></div>
+          <div class="trade-plan-level tp"><span class="label">TP2</span><span class="value" id="plan-tp2">—</span></div>
+          <div class="trade-plan-level tp"><span class="label">TP3</span><span class="value" id="plan-tp3">—</span></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span id="last-update">—</span>
+    <span>DexView Market Mode · Standalone Module · CoinGecko/Binance/Yahoo</span>
+  </footer>
+</div>
+
+<script src="dexview-market.js"></script>
+<script>
+    const API = (location.origin && location.origin !== 'null') ? location.origin : 'http://127.0.0.1:3001';
+(function () {
+  const assetSelect = document.getElementById('asset-select');
+  const assetColorEl = document.getElementById('asset-color');
+  const assetSymbolEl = document.getElementById('asset-symbol');
+  const assetPriceEl = document.getElementById('asset-price');
+  const assetChangeEl = document.getElementById('asset-change');
+  const tfSelector = document.getElementById('tf-selector');
+  const sourceBadge = document.getElementById('source-badge');
+  const chartArea = document.getElementById('chart-area');
+  const lastUpdateEl = document.getElementById('last-update');
+  const planEntry = document.getElementById('plan-entry');
+  const planStop = document.getElementById('plan-stop');
+  const planTp1 = document.getElementById('plan-tp1');
+  const planTp2 = document.getElementById('plan-tp2');
+  const planTp3 = document.getElementById('plan-tp3');
+
+  let currentAsset = 'BTC';
+  let currentTf = '1H';
+  let chartObj = null;
+  let loading = false;
+    // Guards against out-of-order renders. Switching asset starts a new fetch while
+    // the previous one may still be running; without this, the older BTC response
+    // could land after the newer SOL response and redraw the chart as BTC — which
+    // looked exactly like the dropdown not working.
+    let loadGen = 0;
+
+  const DV = window.DexViewMarket;
+
+  function getAssetMeta(symbol) {
+    return DV.TOP_CRYPTO_SYMBOLS[symbol] || { color: '#4db6ff', cg: symbol.toLowerCase(), binance: symbol + 'USDT' };
+  }
+
+  async function fetchPriceAndUpdate(asset) {
+    try {
+      const result = await DV.fetchCurrentPrice(asset);
+      if (Number.isFinite(result.price)) {
+        assetPriceEl.textContent = '$' + DV.formatMiniPrice(result.price).slice(1);
+        // Keep the chart's right-edge marker on the LIVE price, not the
+        // last candle close. On a 1H chart that close is up to an hour
+        // stale, which is why the header and the chart disagreed by $200.
+        if (chartObj && typeof result.price === 'number') chartObj.setLivePrice(result.price);
+        const change = Number(result.change || 0);
+        assetChangeEl.textContent = (change >= 0 ? '+' : '') + change.toFixed(2) + '%';
+        assetChangeEl.className = 'change ' + (change > 0 ? 'pos' : change < 0 ? 'neg' : 'flat');
+        sourceBadge.textContent = result.cached ? 'CACHED' : 'LIVE';
+        sourceBadge.className = 'source-badge ' + (result.cached ? 'cached' : 'live');
+        writeLastGoodPrice(asset.id, { price: result.price, change: result.change, source: result.source, providerLabel: result.providerLabel });
+      }
+    } catch (err) {
+      console.warn('Price fetch failed:', err);
+      // Try cached — but ONLY if the cached price is for this asset. This
+      // fallback used to accept any cached entry, so a failed ticker for SOL
+      // could display BTC's price while the header said SOL.
+      const cached = DV.readLastGoodPrice(asset.id);
+      if (cached && Number.isFinite(Number(cached.price))) {
+        assetPriceEl.textContent = '$' + DV.formatMiniPrice(cached.price).slice(1);
+      if (chartObj && typeof cached.price === 'number') chartObj.setLivePrice(cached.price);
+        // Keep the chart's right-edge marker on the LIVE price, not the
+        // last candle close. On a 1H chart that close is up to an hour
+        // stale, which is why the header and the chart disagreed by $200.
+        if (chartObj && typeof result.price === 'number') chartObj.setLivePrice(result.price);
+        const change = Number(cached.change || 0);
+        assetChangeEl.textContent = (change >= 0 ? '+' : '') + change.toFixed(2) + '%';
+        assetChangeEl.className = 'change ' + (change > 0 ? 'pos' : change < 0 ? 'neg' : 'flat');
+        sourceBadge.textContent = 'CACHED';
+        sourceBadge.className = 'source-badge cached';
+      } else {
+        assetPriceEl.textContent = '$—';
+        // Keep the chart's right-edge marker on the LIVE price, not the
+        // last candle close. On a 1H chart that close is up to an hour
+        // stale, which is why the header and the chart disagreed by $200.
+        if (chartObj && typeof result.price === 'number') chartObj.setLivePrice(result.price);
+        assetChangeEl.textContent = '—';
+        assetChangeEl.className = 'change flat';
+        sourceBadge.textContent = 'OFFLINE';
+        sourceBadge.className = 'source-badge unavailable';
+      }
+    }
+    lastUpdateEl.textContent = 'Updated ' + new Date().toLocaleTimeString();
+  }
+
+  async function loadChart(asset, tf) {
+    if (loading) return;
+    loading = true;
+    const myGen = ++loadGen;
+    // Do NOT blank chartArea when the chart already exists. init() builds the
+    // SVG before calling this; wiping innerHTML here destroyed it, and every later
+    // setData() then wrote to SVG nodes captured before the wipe — detached from the
+    // document, so nothing could ever render.
+    if (!chartObj) chartArea.innerHTML = '<div class="chart-loading">Loading chart\u2026</div>';
+
+    try {
+      const cached = DV.readLastGoodCandles(asset.id, tf);
+      if (cached && cached.candles?.length) {
+        if (!chartObj) chartObj = DV.createChart(chartArea, asset.color || '#4db6ff');
+        if (myGen === loadGen) {
+          chartObj.series.setData(cached.candles);
+          chartObj.setStatus(`${tf} cached`);
+          chartObj.setMeta(`${cached.candles.length} PTS`);
+        }
+      }
+
+      let data = null;
+      let source = 'unknown';
+      try {
+        data = await DV.fetchCoinGeckoOHLC(asset, tf);
+        source = 'coingecko';
+      } catch (e) {
+        try {
+          data = await DV.fetchBinanceOHLC(asset.symbol || asset.id + 'USDT', tf);
+          source = 'binance';
+        } catch (e2) {
+          try {
+            data = await DV.fetchYahooOHLC(asset.symbol || asset.id, tf);
+            source = 'yahoo';
+          } catch (e3) { source = 'none'; }
+        }
+      }
+
+      // A newer load started while this one was awaiting. Abandon quietly —
+      // but `loading` is reset in finally, never by returning from here.
+      if (myGen !== loadGen) return;
+
+      if (data && data.length) {
+        if (!chartObj) chartObj = DV.createChart(chartArea, asset.color || '#4db6ff');
+        chartObj.series.setData(data);
+        chartObj.setStatus(`${tf} ${source}`);
+        chartObj.setMeta(`${data.length} PTS`);
+        sourceBadge.textContent = source.toUpperCase();
+        sourceBadge.className = 'source-badge live';
+        DV.writeLastGoodCandles(asset.id, tf, { candles: data, source, providerLabel: source.charAt(0).toUpperCase() });
+      } else if (!cached) {
+        chartArea.innerHTML = '<div class="chart-error">Failed to load chart data from all providers</div>';
+        sourceBadge.textContent = 'OFFLINE';
+        sourceBadge.className = 'source-badge unavailable';
+      }
+    } finally {
+      // Critical: an early `return` above used to skip this, leaving loading=true
+      // forever and killing every subsequent asset switch.
+      if (myGen === loadGen) loading = false;
+    }
+  }
+
+  function writeLastGoodPrice(assetId, payload) {
+    DV.writeLastGoodPrice(assetId, payload);
+  }
+
+  async function init() {
+    // Predator's Market View button opens this page as
+    // dexview-market.html?symbol=BTC — it was sending the symbol and this page
+    // was ignoring it, so every Market View opened on BTC regardless of which
+    // asset you had selected. Honour the query string before anything renders.
+    try {
+      const q = new URLSearchParams(window.location.search);
+      const wanted = (q.get('symbol') || '').trim().toUpperCase();
+      // Restore the timeframe chosen before an asset switch reloaded the page.
+      const tfQ = (q.get('tf') || '').trim().toUpperCase();
+      if (tfQ && tfSelector) {
+        const tfBtn = Array.from(tfSelector.querySelectorAll('.tf-btn'))
+          .find(b => String(b.dataset.tf).toUpperCase() === tfQ);
+        if (tfBtn) {
+          currentTf = tfBtn.dataset.tf;
+          tfSelector.querySelectorAll('.tf-btn').forEach(b => {
+            const on = b === tfBtn;
+            b.classList.toggle('active', on);
+            b.setAttribute('aria-checked', on ? 'true' : 'false');
+          });
+        }
+      }
+      if (wanted) {
+        const opt = Array.from(assetSelect.options).find(o => o.value.toUpperCase() === wanted);
+        if (opt) {
+          currentAsset = opt.value;
+          assetSelect.value = opt.value;
+        } else {
+          // Not in the list — add it so the requested symbol still renders.
+          assetSelect.insertBefore(new Option(wanted + ' \u2014 ' + wanted, wanted), assetSelect.firstChild);
+          assetSelect.value = wanted;
+          currentAsset = wanted;
+        }
+      }
+    } catch (err) { /* no query string, or malformed — default stands */ }
+
+    const meta = getAssetMeta(currentAsset);
+    const asset = DV.buildCryptoAsset(currentAsset);
+    asset.color = meta.color;
+
+    assetColorEl.style.background = meta.color;
+    assetSymbolEl.textContent = currentAsset;
+
+    // Initial price fetch
+    await fetchPriceAndUpdate(asset);
+
+    // Create chart
+    chartObj = DV.createChart(chartArea, meta.color);
+
+    // Load chart data
+    await loadChart(asset, currentTf);
+
+    // Set up timeframe buttons
+    tfSelector.querySelectorAll('.tf-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Persist the timeframe in the URL so it survives the asset-switch reload.
+        try {
+          const u = new URL(window.location.href);
+          u.searchParams.set('tf', btn.dataset.tf);
+          window.history.replaceState(null, '', u.toString());
+        } catch (_) {}
+        tfSelector.querySelectorAll('.tf-btn').forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-checked', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-checked', 'true');
+        currentTf = btn.dataset.tf;
+        loadChart(asset, currentTf);
+      });
+    });
+
+    // Asset change
+  // Asset change uses the SAME path as the scanner: reload with ?symbol=.
+  // Predator's Market View opens dexview-market.html?symbol=ADA and that has
+  // always worked. Re-rendering in place on a live chart did not — the trade-plan
+  // overlay, the live-price marker and the timeframe state were all mid-flight
+  // from the previous asset. Same proven path for both entry points.
+  assetSelect.addEventListener('change', () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('symbol', assetSelect.value);
+    if (currentTf) url.searchParams.set('tf', currentTf);
+    window.location.replace(url.toString());
+  });
+
+    // ---------- Live position on the chart ----------
+  // DexView already ships renderTradeOverlay + setTradePlan, but nothing ever
+  // called them. Feed the open position in so entry, stop and the trim levels
+  // are drawn as lines on the chart you are looking at.
+  async function loadTradePlan() {
+    if (!chartObj) return;
+    try {
+      const r = await fetch(API + '/api/gaze/positions', { cache: 'no-store' });
+      const d = await r.json();
+      const all = d.positions || [];
+      // Match ONLY the asset on screen. The old code fell back to `|| all[0]`,
+      // so viewing ETH while holding BTC drew BTC's entry/stop/TPs on the ETH
+      // chart — a chart claiming levels for a position that isn't in that market.
+      const p = all.find(x => (x.symbol || '').toUpperCase() === currentAsset.toUpperCase());
+      if (!p) {
+        chartObj.setTradePlan({ hidden: true });
+        clearPlanPanel();
+        return;
+      }
+
+      const trims = (p.trim_levels || []).filter(t => !t.hit).map(t => Number(t.price)).filter(Number.isFinite);
+      const tp = [trims[0], trims[1], trims[2] ?? (trims.length ? trims[trims.length - 1] : Number(p.target))]
+        .filter(v => Number.isFinite(v));
+
+      chartObj.setTradePlan({
+        entry: Number(p.entry),
+        stop_loss: Number(p.stop),
+        tp1: tp[0], tp2: tp[1], tp3: tp[2],
+        selected_level: 'entry',
+        level_visibility: { entry: true, stop_loss: true, tp1: true, tp2: true, tp3: true },
+      });
+      renderPlanBar(p);
+    } catch (e) {
+      if (chartObj) chartObj.setTradePlan({ hidden: true });
+    }
+  }
+
+  function clearPlanPanel() {
+    ['plan-entry','plan-stop','plan-tp1','plan-tp2','plan-tp3'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '\u2014';
+    });
+  }
+
+  function renderPlanBar(p) {
+    // Fill the Trade Plan panel that already exists in the markup
+    // (plan-entry / plan-stop / plan-tp1..3) rather than adding a second bar.
+    const put = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    const n = v => (Number.isFinite(Number(v)) ? Number(v).toFixed(2) : '\u2014');
+    const trims = (p.trim_levels || []).filter(t => !t.hit).map(t => Number(t.price)).filter(Number.isFinite);
+    put('plan-entry', n(p.entry));
+    put('plan-stop',  n(p.stop));
+    put('plan-tp1',   n(trims[0]));
+    put('plan-tp2',   n(trims[1]));
+    put('plan-tp3',   n(trims[2] ?? p.target));
+  }
+  loadTradePlan();
+  setInterval(loadTradePlan, 12000);
+
+  // Zoom controls — the chart auto-scales to the full candle range, which on a
+    // tight 1H window leaves the line crowded. These let you pull in or reset.
+    const zoomLabel = document.getElementById('zoom-label');
+    const syncZoom = () => { if (chartObj) zoomLabel.textContent = chartObj.zoom.toFixed(1) + '\u00d7'; };
+    document.getElementById('zoom-in').addEventListener('click', () => { if (chartObj) { chartObj.zoomIn(); syncZoom(); } });
+    document.getElementById('zoom-out').addEventListener('click', () => { if (chartObj) { chartObj.zoomOut(); syncZoom(); } });
+    document.getElementById('zoom-reset').addEventListener('click', () => { if (chartObj) { chartObj.resetZoom(); syncZoom(); } });
+
+    // Auto-refresh price every 12s
+    const TICK_MS = (currentTf === '1m') ? 5000 : 12000;
+    // Read the asset fresh each tick; the closure captured init()'s value.
+    setInterval(() => fetchPriceAndUpdate(DV.buildCryptoAsset(currentAsset)), TICK_MS);
+  }
+
+  init();
+})();
+</script>
+<a id="btn-overseer" href="http://127.0.0.1:3001/overseer/app.html" target="_top" style="position:fixed;top:10px;right:10px;z-index:99999;padding:7px 13px;border-radius:6px;background:#1b2230;color:#8fd3ff;border:1px solid #2f4a63;font:600 12px/1 system-ui,sans-serif;text-decoration:none;opacity:.85">← Overseer</a>
+</body>
+</html>
