@@ -1,0 +1,313 @@
+/**
+ * DexView Market Mode — Chart Styles
+ * Extracted from DexView for standalone use
+ */
+
+.dex-mini-chart {
+  width: 100%;
+  height: 100%;
+  min-height: 220px;
+  max-height: 400px;
+  display: block;
+  background: transparent;
+  overflow: visible;
+}
+
+/* Grid lines */
+.dex-mini-chart .chart-grid line {
+  stroke: rgba(77, 182, 255, 0.08);
+  stroke-width: 0.5;
+  vector-effect: non-scaling-stroke;
+}
+
+/* Price range lines */
+.dex-mini-chart .chart-range {
+  stroke: rgba(77, 182, 255, 0.15);
+  stroke-width: 0.5;
+  stroke-dasharray: 4 4;
+  vector-effect: non-scaling-stroke;
+}
+.dex-mini-chart .chart-high { stroke: rgba(94, 255, 159, 0.3); }
+.dex-mini-chart .chart-low { stroke: rgba(255, 95, 87, 0.3); }
+.dex-mini-chart .chart-mid { stroke: rgba(77, 182, 255, 0.2); stroke-dasharray: 2 4; }
+
+/* Labels */
+.dex-mini-chart .chart-label {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 9px;
+  fill: rgba(216, 240, 255, 0.6);
+  dominant-baseline: hanging;
+  pointer-events: none;
+}
+.dex-mini-chart .chart-high-label { fill: rgba(94, 255, 159, 0.8); }
+.dex-mini-chart .chart-low-label { fill: rgba(255, 95, 87, 0.8); }
+.dex-mini-chart .chart-mid-label { fill: rgba(168, 216, 255, 0.7); }
+
+/* Fill area */
+.dex-mini-chart .chart-fill {
+  fill-opacity: 0.12;
+  transition: fill-opacity 0.2s ease;
+}
+
+/* Line */
+.dex-mini-chart .chart-line {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  transition: stroke 0.2s ease;
+}
+
+/* Current price dot */
+.dex-mini-chart .chart-dot {
+  r: 3.2;
+  stroke: var(--dex-bg-base, #020814);
+  stroke-width: 2;
+  transition: cx 0.1s ease, cy 0.1s ease;
+}
+
+/* Price box at right edge */
+.dex-mini-chart .chart-price-box {
+  fill: var(--dex-bg-base, #020814);
+  stroke-width: 1;
+  rx: 4;
+  transition: y 0.1s ease, stroke 0.2s ease;
+}
+.dex-mini-chart .chart-price-text {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  font-weight: 600;
+  dominant-baseline: middle;
+  text-anchor: middle;
+  pointer-events: none;
+  transition: y 0.1s ease, fill 0.2s ease;
+}
+
+/* Status text */
+.dex-mini-chart .chart-status {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  fill: rgba(168, 216, 255, 0.5);
+  pointer-events: none;
+}
+.dex-mini-chart .chart-meta {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  fill: rgba(168, 216, 255, 0.4);
+  pointer-events: none;
+}
+
+/* Trade overlay lines */
+.dex-mini-chart .trade-line {
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  vector-effect: non-scaling-stroke;
+  cursor: pointer;
+  transition: stroke-width 0.15s ease, opacity 0.15s ease;
+}
+.dex-mini-chart .trade-line:hover {
+  stroke-width: 2;
+  opacity: 1;
+}
+.dex-mini-chart .trade-line.entry { stroke: #5eff9f; }
+.dex-mini-chart .trade-line.stop { stroke: #ff5f57; }
+.dex-mini-chart .trade-line.tp { stroke: #ffd166; }
+.dex-mini-chart .trade-line.selected {
+  stroke-width: 2;
+  stroke-dasharray: none;
+  filter: drop-shadow(0 0 4px currentColor);
+}
+
+/* Trade labels */
+.dex-mini-chart .trade-label {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 8px;
+  font-weight: 600;
+  dominant-baseline: hanging;
+  pointer-events: auto;
+  cursor: pointer;
+  user-select: none;
+  transition: opacity 0.15s ease;
+}
+.dex-mini-chart .trade-label.entry { fill: #5eff9f; }
+.dex-mini-chart .trade-label.stop { fill: #ff5f57; }
+.dex-mini-chart .trade-label.tp { fill: #ffd166; }
+.dex-mini-chart .trade-label.selected {
+  fill: var(--accent, #4db6ff);
+  filter: drop-shadow(0 0 3px currentColor);
+}
+
+/* Loading state */
+.chart-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 220px;
+  color: var(--muted, rgba(168, 216, 255, 0.5));
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Error state */
+.chart-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 220px;
+  padding: 16px;
+  color: #ff5f57;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 10px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* Chart container wrapper */
+.dex-chart-container {
+  position: relative;
+  width: 100%;
+  min-height: 220px;
+  background: rgba(2, 8, 20, 0.6);
+  border: 1px solid rgba(77, 182, 255, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.dex-chart-container.fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  border-radius: 0;
+  border: none;
+  background: var(--dex-bg-base, #020814);
+}
+
+/* Timeframe selector */
+.dex-tf-selector {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px;
+  background: rgba(2, 8, 20, 0.8);
+  border-bottom: 1px solid rgba(77, 182, 255, 0.1);
+}
+.dex-tf-btn {
+  padding: 4px 10px;
+  border: 1px solid rgba(77, 182, 255, 0.15);
+  background: transparent;
+  color: var(--muted, rgba(168, 216, 255, 0.5));
+  font-family: inherit;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: all 0.1s;
+}
+.dex-tf-btn:hover {
+  border-color: rgba(77, 182, 255, 0.4);
+  color: var(--text, #d8f0ff);
+}
+.dex-tf-btn.active {
+  border-color: var(--accent, #4db6ff);
+  color: var(--accent, #4db6ff);
+  background: rgba(77, 182, 255, 0.1);
+}
+
+/* Asset color swatch */
+.dex-asset-color {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* Chart title bar */
+.dex-chart-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: rgba(2, 8, 20, 0.8);
+  border-bottom: 1px solid rgba(77, 182, 255, 0.1);
+}
+.dex-chart-title .symbol {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.dex-chart-title .price {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.dex-chart-title .change {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+.dex-chart-title .change.pos { color: #5eff9f; }
+.dex-chart-title .change.neg { color: #ff5f57; }
+.dex-chart-title .change.flat { color: rgba(168, 216, 255, 0.5); }
+
+/* Source badge */
+.dex-source-badge {
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border: 1px solid;
+  border-radius: 3px;
+}
+.dex-source-badge.live { color: #5eff9f; border-color: rgba(94, 255, 159, 0.3); background: rgba(94, 255, 159, 0.08); }
+.dex-source-badge.cached { color: #ffd166; border-color: rgba(255, 209, 102, 0.3); background: rgba(255, 209, 102, 0.08); }
+.dex-source-badge.mock { color: rgba(168, 216, 255, 0.5); border-color: rgba(168, 216, 255, 0.2); background: rgba(168, 216, 255, 0.04); }
+.dex-source-badge.unavailable { color: #ff5f57; border-color: rgba(255, 95, 87, 0.3); background: rgba(255, 95, 87, 0.08); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dex-mini-chart { min-height: 180px; }
+  .dex-chart-container { min-height: 180px; }
+}
+
+/* Print */
+@media print {
+  .dex-mini-chart .chart-grid,
+  .dex-mini-chart .chart-range,
+  .dex-mini-chart .chart-label,
+  .dex-mini-chart .trade-overlay {
+    display: none;
+  }
+  .dex-mini-chart .chart-line {
+    stroke: #333 !important;
+    stroke-width: 2;
+  }
+  .dex-mini-chart .chart-fill {
+    fill: #333 !important;
+    fill-opacity: 0.15;
+  }
+}
+/* Zoom controls */
+.zoom-selector { display: inline-flex; align-items: center; gap: 4px; margin-left: 10px; }
+.zoom-btn {
+  background: transparent; border: 1px solid rgba(120,140,170,.3); color: #8fa3bd;
+  border-radius: 6px; padding: 3px 8px; font-size: 12px; font-weight: 700;
+  cursor: pointer; font-family: inherit; line-height: 1.4;
+}
+.zoom-btn:hover { border-color: rgba(120,140,170,.7); color: #dce6f2; }
+.zoom-btn.wide { letter-spacing: .06em; font-size: 10px; }
+.zoom-label {
+  font-size: 11px; color: #6f8298; min-width: 34px; text-align: center;
+  font-variant-numeric: tabular-nums;
+}
