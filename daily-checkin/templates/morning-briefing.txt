@@ -1,0 +1,25 @@
+DAILY MARKET CHECK — {date}
+
+MARKET OVERVIEW
+BTC: ${btc_price:,.0f} ({btc_change:+.2f}%) — Structure: {btc_structure}
+ETH: ${eth_price:,.0f} ({eth_change:+.2f}%) — Structure: {eth_structure}
+
+TODAY'S SETUPS (Top 3)
+1. {setup_1_symbol} {setup_1_direction} — Support at ${setup_1_entry:,.0f}
+   Entry: ${setup_1_entry:,.0f} | Stop: ${setup_1_stop:,.0f} | Target: ${setup_1_target:,.0f}
+   R:R = {setup_1_rr} | Confidence: {setup_1_confidence}/10
+
+2. {setup_2_symbol} {setup_2_direction} — Support at ${setup_2_entry:,.0f}
+   Entry: ${setup_2_entry:,.0f} | Stop: ${setup_2_stop:,.0f} | Target: ${setup_2_target:,.0f}
+   R:R = {setup_2_rr} | Confidence: {setup_2_confidence}/10
+
+3. {setup_3_symbol} {setup_3_direction} — Support at ${setup_3_entry:,.0f}
+   Entry: ${setup_3_entry:,.0f} | Stop: ${setup_3_stop:,.0f} | Target: ${setup_3_target:,.0f}
+   R:R = {setup_3_rr} | Confidence: {setup_3_confidence}/10
+
+OPEN POSITIONS
+{positions}
+
+ACCOUNT STATUS
+Today's P&L: {daily_pnl} | Week: {weekly_pnl} | Month: {monthly_pnl}
+Risk remaining: {risk_remaining} of ${max_daily_risk} daily max
