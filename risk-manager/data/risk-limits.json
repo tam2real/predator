@@ -1,0 +1,27 @@
+{
+  "account": "BreakoutProp",
+  "daily_loss_limit_pct": 2.0,
+  "total_drawdown_limit_pct": 10,
+  "min_trading_days": 5,
+  "max_risk_per_trade_pct": 1,
+  "max_risk_per_trade_dollars": 100,
+  "account_size": 10000.0,
+  "currency": "USD",
+  "rules": [
+    "Max 1% risk per trade ($100 on $10K)",
+    "Max 5% daily loss ($500)",
+    "Max 10% total drawdown ($1,000)",
+    "Min 5 trading days to get funded",
+    "No revenge trading after 2 losses"
+  ],
+  "take_profit_ratio": 3.0,
+  "protect_mode": {
+    "enabled": true,
+    "on_daily_loss_limit": "halt_new_entries",
+    "on_daily_take_profit": "halt_new_entries",
+    "tighten_stops_on_protect": true,
+    "reset": "next_trading_day"
+  },
+  "updated": "2026-10-13T13:31:54",
+  "take_profit_mode": "auto"
+}
